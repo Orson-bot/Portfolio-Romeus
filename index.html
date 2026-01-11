@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gayod Portfolio</title>
+  <style>
+    :root{
+      --bg1:#0b1020; --bg2:#0b1a2b;
+      --accent1:#ffd24d; --accent2:#ff8a00;
+      --muted:rgba(255,255,255,0.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#fff}
+    /* layout */
+    #app{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:relative;overflow:hidden;padding:100px 20px 40px;opacity:0.95}
+    nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));padding:8px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(6px)}
+    nav button{background:transparent;border:0;color:inherit;padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:600;letter-spacing:0.4px;transition:background .24s,color .24s,box-shadow .24s}
+    nav button.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111;box-shadow:0 6px 18px rgba(255,140,0,0.15)}
+    .panel{width:min(900px,96%);background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.12));border-radius:12px;padding:36px;border:1px solid rgba(255,255,255,0.03);backdrop-filter:blur(6px)}
+    h1{margin:0 0 10px;font-size:32px}
+    p.lead{color:rgba(255,255,255,0.85);margin:0 0 18px}
+    /* tabs */
+    section.tab{display:none;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s}
+    section.tab.active{display:block;opacity:1;transform:translateY(0)}
+    .works-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.15));padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    /* animated entrance + hover for project cards */
+    .works-grid .card{display:block;text-decoration:none;color:inherit;cursor:pointer;transform:translateY(12px);opacity:0;animation:cardIn .56s cubic-bezier(.2,.9,.2,1) forwards;animation-delay:calc(var(--i,0) * 0.06s)}
+    @keyframes cardIn{to{transform:translateY(0);opacity:1}}
+    .card:hover,.card:focus{transform:translateY(-8px) scale(1.02);box-shadow:0 18px 40px rgba(0,0,0,0.45);border-color:rgba(255,255,255,0.06)}
+    .card:active{transform:translateY(-4px) scale(.995)}
+    .card strong{display:block;margin-top:6px}
+    .thumb{height:140px;border-radius:8px;margin-bottom:10px;background-size:cover;background-position:center;box-shadow:inset 0 20px 40px rgba(0,0,0,0.18);overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    /* About avatar */
+    .about-row{display:flex;gap:18px;align-items:center}
+    .avatar{width:120px;height:120px;border-radius:50%;flex:0 0 120px;background:linear-gradient(135deg,#ffd24d22,#ff8a0022);border:3px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-weight:700;color:#111}
+    @media (max-width:720px){.about-row{flex-direction:column;align-items:flex-start}.avatar{width:96px;height:96px;flex:0}} 
+
+    /* Game styles */
+    .game-wrap{display:flex;gap:18px;align-items:center;margin-top:18px;justify-content:center;flex-wrap:wrap}
+    canvas#tetrisCanvas{width:240px;height:480px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.12));border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 24px rgba(0,0,0,0.45);transition:transform .12s ease, box-shadow .12s ease}
+
+    /* game canvas animations */
+    @keyframes canvasPop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+    @keyframes canvasFlash{0%{filter:brightness(1)}50%{filter:brightness(1.45) saturate(1.05)}100%{filter:brightness(1)}}
+    canvas#tetrisCanvas.pop{animation:canvasPop .14s ease 1}
+    canvas#tetrisCanvas.flash{animation:canvasFlash .22s ease 1}
+
+    /* button press animation */
+    .btn.press{transform:translateY(1px) scale(.98);box-shadow:0 6px 14px rgba(0,0,0,0.25)}
+
+    /* control button styles */
+    .btn.control{padding:10px 12px;border-radius:10px;font-weight:800;letter-spacing:0.6px;background:linear-gradient(90deg,#1b2b3a,#123247);color:#fff;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(0,0,0,0.32)}
+    .btn.control.muted{background:transparent;border:1px solid rgba(255,255,255,0.04);color:rgba(255,255,255,0.9)}
+    .btn.control:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,0.45)}
+
+    .game-info{color:rgba(255,255,255,0.85);font-size:14px}
+    .score-up{display:inline-block;transform-origin:center center;transition:transform .18s cubic-bezier(.2,.9,.2,1)}
+    .score-up.bump{transform:scale(1.18);color:#ffd24d}
+    .contact-row{display:flex;gap:12px;flex-wrap:wrap}
+    a.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#111;font-weight:700;text-decoration:none}
+    /* subtle planet */
+    .planet{position:absolute;right:-120px;top:40px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle at 30% 30%, rgba(255,150,60,0.12), rgba(0,0,0,0));filter:blur(18px);opacity:0.6;transform:scale(.9)}
+
+    /* Stars */
+    .star{position:absolute;border-radius:50%;pointer-events:none;box-shadow:0 0 8px rgba(255,200,60,0.45);mix-blend-mode:screen}
+    @keyframes twinkle{0%{opacity:0.15;transform:scale(.8)}50%{opacity:1;transform:scale(1.6)}100%{opacity:0.2;transform:scale(.9)}}
+
+    /* shooting star */
+    .shoot{position:absolute;pointer-events:none;border-radius:2px;background:linear-gradient(90deg, #fff, rgba(255,200,60,0.9), rgba(255,140,0,0.0));filter:blur(0.6px)}
+    @keyframes shootAnimation{0%{opacity:1;transform:translate3d(0,0,0) rotate(-28deg)}100%{opacity:0;transform:translate3d(-1100px,600px,0) rotate(-28deg)}}
+
+    /* footer */
+    footer{position:fixed;left:16px;bottom:12px;color:rgba(255,255,255,0.5);font-size:13px}
+    /* contact list */
+    .contact-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    .contact-item{display:flex;gap:10px;align-items:center;color:rgba(255,255,255,0.9);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+    .contact-item a{color:inherit;text-decoration:none}
+    .contact-item .icon{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,0.03);flex:0 0 36px}
+    .contact-item strong{font-weight:700}
+    /* small screens */
+    @media (max-width:520px){h1{font-size:22px}.planet{display:none}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <nav aria-label="Primary">
+      <button data-tab="home" class="active">Home</button>
+      <button data-tab="about">About Me</button>
+      <button data-tab="works">My Works</button>  
+      <button data-tab="contact">Contact</button>
+    </nav>
+
+    <div class="planet" aria-hidden="true"></div>
+
+    <main class="panel" role="main" aria-live="polite">
+      <section id="home" class="tab active">
+        <h1>My Name is Jah-Rek Romeus A. Gayod </h1>
+        <p class="lead">
+        Welcome to my coded website portfolio! As a greeting to my visitors, I've built a simple Tetris game for you to enjoy before exploring my works and background.
+        </p>
+
+        <div class="game-wrap" aria-hidden="false">
+          <canvas id="tetrisCanvas" width="240" height="480"></canvas>
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="playBtn" class="btn control">Start</button>
+              <button id="resetBtn" class="btn control muted">Reset</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="leftBtn" class="btn control">←</button>
+              <button id="rotateBtn" class="btn control">⤾</button>
+              <button id="rightBtn" class="btn control">→</button>
+              <button id="dropBtn" class="btn control">↓</button>
+            </div>
+            <div class="game-info">
+              <div id="gameMsg" style="color:rgba(255,210,77,0.95);font-weight:700">Score: <span id="score" class="score-up">0</span></div>
+              <div style="color:rgba(255,255,255,0.65);font-size:13px">Lines: <span id="lines">0</span> · Level: <span id="level">1</span> · High: <span id="highScore">0</span></div>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:13px">Controls: ← → move · ↑ rotate (CW) · ↓ rotate (CCW) · Space hard drop</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:center;margin-left:14px">
+            <div style="color:rgba(255,255,255,0.85);font-weight:700;margin-bottom:6px">Next</div>
+            <canvas id="nextCanvas" width="96" height="96" style="background:transparent;border-radius:6px;border:1px solid rgba(255,255,255,0.04);"></canvas>
+          </div>
+        </div>
+        <div style="margin-top:10px;color:rgba(255,255,255,0.55);font-size:13px;text-align:center">Instructions: Use the arrow keys to move pieces, press ↑ to rotate counter-clockwise, press Space to hard drop. Scores increase per cleared line.</div>
+      </section>
+
+      <section id="about" class="tab">
+        <h1>About Me</h1>
+          <div class="about-row">
+            <div><img src="Pi7_Passport_Photo.jpeg" alt="Profile Picture"></div>
+          <div>
+            <p class="lead"> I am a Grade 12 ICT student with a strong foundation in HTML, PHP, C++, C#, and other programming languages. My main interest is web design, where I enjoy combining visual creativity with practical, well-structured functionality. I also thrive in collaborative settings and have worked on several team-based projects, including a Unity project where we developed a graphics settings interface with interactive environmental effects. I am eager to keep expanding my skills and contributing to real-world projects, and I believe your company offers the right environment for both growth and meaningful involvement. More information about my work and projects can be found in my résumé. </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="works" class="tab">
+        <h1>My Works</h1>
+        <p class="lead"> A select few of my projects throughout Grade 11 to Grade 12.</p>
+        <div class="works-grid">
+          <a class="card" href="https://drive.google.com/file/d/1lf41Qbb7qjnOaW0Wx0nZ_u_HgaL0qW6b/view" target="_blank" rel="noopener noreferrer" style="--i:0">
+            <div class="thumb"><img src="Film.jpg" alt="Project Aurora"></div>
+            <strong>Film Project</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)">A short film representing the hardships of friendships </div>
+          </a>
+          <a class="card" href="https://github.com/Orson-bot/Unity-Damage-System" target="_blank" rel="noopener noreferrer" style="--i:1">
+            <div class="thumb"><img src="Damage.jpg" alt="Comet Notes"></div>
+            <strong>Unity Damage System</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)">An back-end interactive damage system for Unity games.</div>
+          </a>
+          <a class="card" href="https://github.com/arjan-a-manzano/P03-Q1-QA" target="_blank" rel="noopener noreferrer" style="--i:2">
+            <div class="thumb"><img src="graphic.jpg" alt="Stellar Docs"></div>
+            <strong>unity Basic Graphics</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)">With custom UI that demonstrates basic graphics rendering in Unity.</div>
+          </a>
+          <a class="card" href="https://github.com/Orson-bot/PHP-Calculator" target="_blank" rel="noopener noreferrer" style="--i:3">
+            <div class="thumb"><img src="calculator.jpg" alt="Orbit UI"></div>
+            <strong>Basic PHP Calculator</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)">A basic calculator made by using PHP and Html.</div>
+          </a>
+          <a class="card" href="https://github.com/Orson-bot/Website-Product" target="_blank" rel="noopener noreferrer" style="--i:4">
+            <div class="thumb"><img src="solar.jpg" alt=" Chat"></div>
+            <strong> Product Website</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)"> Basic Functions of Html, Java and CSS</div>
+          </a>
+          <a class="card" href="https://drive.google.com/drive/folders/1y5WUUwkd8QTXK3GwH5eLZ1tcuL-kfZjB?usp=sharing" target="_blank" rel="noopener noreferrer" style="--i:5">
+            <div class="thumb"><img src="Group.jpg" alt="Nova Shop"></div>
+            <strong>Kayumutiara Contributions</strong>
+            <div style="margin-top:8px;color:rgba(255,255,255,0.8)">A major school play where I assisted and made drafts for the playbill</div>
+          </a>
+        </div>
+      </section>
+
+      <section id="contact" class="tab">
+        <h1>Contact</h1>
+        <p class="lead">Want to collaborate or say hi? Reach out!</p>
+        <div class="contact-row">
+          <div class="contact-list">
+            <div class="contact-item" role="group" aria-label="Email">
+              <div class="icon" aria-hidden="true"> 
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6.5C3 5.67 3.67 5 4.5 5h15c.83 0 1.5.67 1.5 1.5v11c0 .83-.67 1.5-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-11z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 7.2l-9 6-9-6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><a href="mailto:jahrekromeus@gmail.com">jahrekromeus@gmail.com</a></div>
+            </div>
+
+            <div class="contact-item" role="group" aria-label="Address">
+              <div class="icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s7-4.35 7-10a7 7 0 1 0-14 0c0 5.65 7 10 7 10z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.02)"/></svg>
+              </div>
+              <div>Quezon City, Katipunan</div>
+            </div>
+
+            <div class="contact-item" role="group" aria-label="Phone">
+              <div class="icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.72c.12 1.21.5 2.39 1.12 3.5a2 2 0 0 1-.45 2.11L9.91 11.09a16 16 0 0 0 6 6l1.76-1.76a2 2 0 0 1 2.11-.45c1.11.62 2.29 1 3.5 1.12A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><a href="tel:+639772071011">09772071011</a></div>
+            </div>
+
+            <div class="contact-item" role="group" aria-label="LinkedIn">
+              <div class="icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-14h4v2.5a3.5 3.5 0 0 1 3-1.5zM2 9h4v14H2zM4 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><a href="https://www.linkedin.com/in/jah-rek-romeus-gayod-27538637a" target="_blank" rel="noopener noreferrer">jah-rek-romeus-gayod-27538637a</a></div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <a class="btn" href="#" id="downloadResume">Download Résumé</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>Nothing here but space.....</footer>
+  </div>
+
+  <script>
+    // Tabs
+    const tabs = document.querySelectorAll('nav button');
+    const panels = document.querySelectorAll('section.tab');
+    tabs.forEach(btn=>btn.addEventListener('click',()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const id = btn.dataset.tab;
+      panels.forEach(p=>{p.classList.toggle('active', p.id===id)});
+    }));
+
+    // Stars generation
+    const STAR_COUNT = 120;
+    const app = document.getElementById('app');
+    function rand(min,max){return Math.random()*(max-min)+min}
+
+    for(let i=0;i<STAR_COUNT;i++){
+      const s = document.createElement('div');
+      s.className='star';
+      const size = Math.round(rand(1,3));
+      s.style.width = size+'px'; s.style.height = size+'px';
+      const x = rand(0,100); const y = rand(0,100);
+      s.style.left = x + '%'; s.style.top = y + '%';
+      // yellow / orange palette
+      const color = Math.random()>.6 ? '255,138,0' : '255,210,77';
+      s.style.background = `rgba(${color},1)`;
+      s.style.boxShadow = `0 0 ${rand(4,10)}px rgba(${color},0.9)`;
+      s.style.opacity = rand(0.2,0.95);
+      s.style.animation = `twinkle ${rand(2.5,6)}s infinite ease-in-out ${rand(0,5)}s`;
+      app.appendChild(s);
+    }
+
+    // Shooting stars
+    function makeShootingStar(){
+      const s = document.createElement('div');
+      s.className='shoot';
+      const startX = rand(80,110); // start a bit off-right
+      const startY = rand(-10,30);
+      const length = rand(80,260);
+      s.style.width = length + 'px'; s.style.height = '2px';
+      s.style.left = startX + 'vw'; s.style.top = startY + 'vh';
+      s.style.background = 'linear-gradient(90deg, rgba(255,255,255,1), rgba(255,210,77,0.9), rgba(255,138,0,0.0))';
+      s.style.transform = 'rotate(-28deg)';
+      const dur = rand(900,1700);
+      s.style.animation = `shootAnimation ${dur}ms linear forwards`;
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(), dur+50);
+    }
+
+    // random interval shooting stars
+    (function scheduleShooting(){
+      const next = rand(1200,4200);
+      setTimeout(()=>{ makeShootingStar(); scheduleShooting(); }, next);
+    })();
+
+    // Optional resume download demo (creates a tiny text file)
+    document.getElementById('downloadResume').addEventListener('click', e=>{
+      e.preventDefault();
+      const blob = new Blob(["Name: Space Dev\nRole: Frontend Engineer\nNotes: This is a demo résumé."],{type:'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'resume.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // --- Tetris implementation (replaces Pac-Man) ---
+    (function(){
+      const canvas = document.getElementById('tetrisCanvas');
+      const ctx = canvas.getContext('2d');
+      const playBtn = document.getElementById('playBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const leftBtn = document.getElementById('leftBtn');
+      const rightBtn = document.getElementById('rightBtn');
+      const rotateBtn = document.getElementById('rotateBtn');
+      const dropBtn = document.getElementById('dropBtn');
+      const scoreEl = document.getElementById('score');
+      const linesEl = document.getElementById('lines');
+      const levelEl = document.getElementById('level');
+      const nextCanvas = document.getElementById('nextCanvas');
+      const nextCtx = nextCanvas && nextCanvas.getContext ? nextCanvas.getContext('2d') : null;
+
+      const COLS = 10, ROWS = 20, CELL = 24;
+      // scale for DPR
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = COLS * CELL * dpr; canvas.height = ROWS * CELL * dpr;
+      canvas.style.width = (COLS * CELL) + 'px'; canvas.style.height = (ROWS * CELL) + 'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      const colors = ['#000000','#ff4d4d','#4de1ff','#ffda44','#7cff7c','#b98cff','#ff8a00','#80b3ff'];
+
+      const SHAPES = [
+        // I
+        [[1,1,1,1],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+        // J
+        [[2,0,0],[2,2,2],[0,0,0]],
+        // L
+        [[0,0,3],[3,3,3],[0,0,0]],
+        // O
+        [[4,4],[4,4]],
+        // S
+        [[0,5,5],[5,5,0],[0,0,0]],
+        // T
+        [[0,6,0],[6,6,6],[0,0,0]],
+        // Z
+        [[7,7,0],[0,7,7],[0,0,0]]
+      ];
+
+      function rotateCW(matrix){
+        const N = matrix.length; const res = Array.from({length:N},()=>Array(N).fill(0));
+        for(let r=0;r<N;r++) for(let c=0;c<N;c++) res[c][N-1-r] = matrix[r][c];
+        return res;
+      }
+      function rotateCCW(matrix){
+        const N = matrix.length; const res = Array.from({length:N},()=>Array(N).fill(0));
+        for(let r=0;r<N;r++) for(let c=0;c<N;c++) res[N-1-c][r] = matrix[r][c];
+        return res;
+      }
+
+      let board = [];
+      function resetBoard(){ board = Array.from({length:ROWS},()=>Array(COLS).fill(0)); }
+
+      function randomPiece(){
+        const idx = Math.floor(Math.random()*SHAPES.length);
+        const shape = SHAPES[idx].map(row=>row.slice());
+        return {x: Math.floor((COLS - shape[0].length)/2), y: 0, shape, id: shape.flat().find(v=>v)||1, type: idx};
+      }
+
+      let piece = null; let next = null; let running = false; let dropCounter = 0; let dropInterval = 450; let lastTime = 0; let score = 0; let linesCleared = 0;
+
+      function collide(board, piece, offX=0, offY=0, testShape=null){
+        const s = testShape || piece.shape;
+        for(let r=0;r<s.length;r++) for(let c=0;c<s[r].length;c++){
+          if(!s[r][c]) continue;
+          const x = piece.x + c + offX; const y = piece.y + r + offY;
+          if(x < 0 || x >= COLS || y >= ROWS) return true;
+          if(y>=0 && board[y][x]) return true;
+        }
+        return false;
+      }
+
+      function merge(board, piece){
+        const s = piece.shape; for(let r=0;r<s.length;r++) for(let c=0;c<s[r].length;c++){
+          if(!s[r][c]) continue; const x = piece.x + c, y = piece.y + r; if(y>=0) board[y][x] = s[r][c];
+        }
+      }
+
+      function clearLines(){
+        let rowCount = 0;
+        outer: for(let r=ROWS-1;r>=0;r--){
+          for(let c=0;c<COLS;c++) if(!board[r][c]) continue outer;
+          const row = board.splice(r,1)[0]; board.unshift(Array(COLS).fill(0)); rowCount++; r++;
+        }
+        if(rowCount){
+          // scoring: classic-like base values, scaled by level
+          const baseScores = [0,100,300,500,800];
+          linesCleared += rowCount;
+          const level = Math.max(1, 1 + Math.floor(linesCleared/10));
+          score += (baseScores[rowCount] || (rowCount*200)) * level;
+          dropInterval = Math.max(80, 450 - Math.floor(linesCleared/10)*40);
+          scoreEl.textContent = score;
+          linesEl.textContent = linesCleared;
+          levelEl.textContent = level;
+          // flash canvas to indicate line clear
+          canvas.classList.add('flash'); setTimeout(()=>canvas.classList.remove('flash'), 260);
+        }
+      }
+
+      function spawn(){ piece = next || randomPiece(); next = randomPiece(); drawNext(); if(collide(board, piece)){ running = false; playBtn.textContent = 'Start'; document.getElementById('gameMsg').textContent = 'Game Over'; }
+      }
+
+      function hardDrop(){ const startY = piece.y; while(!collide(board, piece, 0, 1)){ piece.y++; } const dropped = piece.y - startY; score += dropped * 2; scoreEl.textContent = score; lockPiece(); }
+
+      function lockPiece(){ merge(board, piece); // small pop animation
+        canvas.classList.add('pop'); setTimeout(()=>canvas.classList.remove('pop'), 160);
+        score += 4; // small reward for placing
+        clearLines(); scoreEl.textContent = score; spawn(); }
+
+      function rotatePieceCW(){ const rotated = rotateCW(piece.shape); if(!collide(board, piece, 0, 0, rotated)){ piece.shape = rotated; } }
+      function rotatePieceCCW(){ const rotated = rotateCCW(piece.shape); if(!collide(board, piece, 0, 0, rotated)){ piece.shape = rotated; } }
+
+      function movePiece(dx){ if(!collide(board, piece, dx, 0)) piece.x += dx; }
+
+      function step(time=0){ if(!running) return; const delta = time - lastTime; lastTime = time; dropCounter += delta; if(dropCounter > dropInterval){ piece.y++; if(collide(board, piece, 0, 0)){ piece.y--; lockPiece(); } dropCounter = 0; } draw(); requestAnimationFrame(step); }
+
+      function drawCell(x,y,val){ ctx.fillStyle = colors[val] || '#000'; ctx.fillRect(x*CELL+1, y*CELL+1, CELL-2, CELL-2); }
+
+      function draw(){ // clear so underlying panel gradient shows through (avoids color mismatch on scroll)
+        ctx.clearRect(0,0,COLS*CELL,ROWS*CELL);
+        // draw board
+        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) drawCell(c,r, board[r][c]);
+        // draw current piece
+        if(piece){ const s = piece.shape; for(let r=0;r<s.length;r++) for(let c=0;c<s[r].length;c++) if(s[r][c]) drawCell(piece.x+c, piece.y+r, s[r][c]); }
+      }
+
+      function drawNext(){ if(!nextCtx || !next) return; nextCtx.clearRect(0,0,nextCanvas.width,nextCanvas.height); const size = Math.min(nextCanvas.width, nextCanvas.height); const s = next.shape; const cell = Math.floor(size / Math.max(s.length, s[0].length)); const offsetX = Math.floor((size - cell * s[0].length)/2); const offsetY = Math.floor((size - cell * s.length)/2);
+        for(let r=0;r<s.length;r++) for(let c=0;c<s[r].length;c++){ const v = s[r][c]; if(!v) continue; nextCtx.fillStyle = colors[v] || '#fff'; nextCtx.fillRect(offsetX + c*cell + 2, offsetY + r*cell + 2, cell-4, cell-4); }
+      }
+
+      // controls
+      playBtn.addEventListener('click', ()=>{
+        if(!running){ if(!piece){ reset(); } running = true; playBtn.textContent = 'Pause'; document.getElementById('gameMsg').textContent = ''; lastTime = performance.now(); requestAnimationFrame(step); }
+        else { running = false; playBtn.textContent = 'Start'; }
+      });
+      resetBtn.addEventListener('click', ()=>{ reset(); draw(); });
+      leftBtn.addEventListener('click', ()=>{ movePiece(-1); leftBtn.classList.add('press'); setTimeout(()=>leftBtn.classList.remove('press'),120); draw(); });
+      rightBtn.addEventListener('click', ()=>{ movePiece(1); rightBtn.classList.add('press'); setTimeout(()=>rightBtn.classList.remove('press'),120); draw(); });
+      rotateBtn.addEventListener('click', ()=>{ rotatePieceCW(); rotateBtn.classList.add('press'); setTimeout(()=>rotateBtn.classList.remove('press'),120); draw(); });
+      dropBtn.addEventListener('click', ()=>{ if(piece) { piece.y++; if(collide(board,piece,0,0)){ piece.y--; lockPiece(); } dropBtn.classList.add('press'); setTimeout(()=>dropBtn.classList.remove('press'),120); draw(); } });
+
+      window.addEventListener('keydown', (e)=>{
+        if(!piece) return;
+        if(e.key === 'ArrowLeft') { movePiece(-1); leftBtn.classList.add('press'); setTimeout(()=>leftBtn.classList.remove('press'),120); draw(); }
+        else if(e.key === 'ArrowRight') { movePiece(1); rightBtn.classList.add('press'); setTimeout(()=>rightBtn.classList.remove('press'),120); draw(); }
+        else if(e.key === 'ArrowUp') { rotatePieceCW(); rotateBtn.classList.add('press'); setTimeout(()=>rotateBtn.classList.remove('press'),120); draw(); }
+        else if(e.key === 'ArrowDown') { rotatePieceCCW(); dropBtn.classList.add('press'); setTimeout(()=>dropBtn.classList.remove('press'),120); draw(); }
+        else if(e.key === ' '){ e.preventDefault(); hardDrop(); playBtn.classList.add('press'); setTimeout(()=>playBtn.classList.remove('press'),120); draw(); }
+      });
+
+      function reset(){ resetBoard(); score = 0; linesCleared = 0; scoreEl.textContent = score; piece = null; next = null; running = false; playBtn.textContent = 'Start'; document.getElementById('gameMsg').textContent = ''; dropInterval = 450; spawn(); }
+
+      // initial draw
+      reset(); draw();
+    })();
+  </script>
+</body>
+</html>
